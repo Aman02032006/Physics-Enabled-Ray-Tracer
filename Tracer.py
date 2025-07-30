@@ -1,14 +1,6 @@
 import numpy as np
 from Utils import *
 
-def ray_in_sphere(beamlet, center):
-    L = center - beamlet.position
-    t_ca = np.dot(L, beamlet.direction)
-    if t_ca < 0 :
-        return False
-    closest_dist = np.dot(L, L) - t_ca**2
-    return closest_dist < 6.25e-4
-
 class Tracer:
     def __init__(self, elements = []):
         self.ElementList = elements

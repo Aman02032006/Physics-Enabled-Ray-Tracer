@@ -70,7 +70,6 @@ class Mirror(OpticalElement) :
             rs, rp = self.fresnels_coefficients_reflection(self.refractive_index, cos_theta_i)
 
             beamlet.direction = beamlet.direction - 2 * self.orientation * (beamlet.direction @ self.orientation)
-            beamlet.beam_axis = beamlet.beam_axis - 2 * self.orientation * (beamlet.beam_axis @ self.orientation)
 
             k_out = beamlet.direction
 

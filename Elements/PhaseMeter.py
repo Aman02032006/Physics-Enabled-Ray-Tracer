@@ -50,7 +50,7 @@ class PhaseMeter(OpticalElement):
         self.collected_beamlets.append(beamlet)
         beamlet.active = False
     
-    def plot(self):
+    def plotPhase(self):
         if not self.collected_beamlets:
             print("No beamlets collected.")
             return
@@ -69,19 +69,16 @@ class PhaseMeter(OpticalElement):
             x_list.append(x_rel)
             y_list.append(y_rel)
 
-            # print(f"[{self.name}] :\tElectric Field = {beamlet.E}")
-
             Ex = np.dot(beamlet.E, v)
-            Ey = np.dot(beamlet.E, u)
             phi = np.angle(Ex, deg = False)
             extracted_phase_list.append(phi if phi > 0 else phi + 2 * PI)  # Wrap phase between 0 and 2π
-            calculated_phase_list.append(beamlet.propagation_phase)
+            calculated_phase_list.append(beamlet.propagation_phase % (2 * PI))
         
         print(f"Average total phase = {np.mean(extracted_phase_list) / PI} PI")
         print(f"Average propagation phase = {np.mean(calculated_phase_list) / PI} PI")
         
         plt.figure(figsize=(6, 6))
-        scatter = plt.scatter(x_list, y_list, c=calculated_phase_list, cmap='twilight', s=2, vmin = 0.0, vmax = 2 * PI)
+        scatter = plt.scatter(x_list, y_list, c=calculated_phase_list, cmap='viridis', s=2, vmin = 0.0, vmax = 2 * PI)
         plt.colorbar(scatter, label='Phase (radians)')
         plt.xlabel("X (m)")
         plt.ylabel("Y (m)")
@@ -89,4 +86,38 @@ class PhaseMeter(OpticalElement):
         plt.ylim(-self.size / 2, self.size / 2)
         plt.title("Phase Map at PhaseMeter")
         plt.gca().set_aspect('equal')
-        plt.show()
+
+    def visualizeWavefront(self):
+        if not self.collected_beamlets:
+            print("No beamlets collected.")
+            return
+
+        u, v, _ = self.local_frame
+        x_list = []
+        y_list = []
+        calculated_phase_list = []
+
+        for beamlet in self.collected_beamlets:
+            dx = beamlet.position - self.position
+            x_rel = np.dot(dx, v)
+            y_rel = np.dot(dx, u)
+            
+            x_list.append(x_rel)
+            y_list.append(y_rel)
+            calculated_phase_list.append(beamlet.propagation_phase)
+
+        fig = plt.figure(figsize = (6, 6))
+        ax = fig.add_subplot(111, projection = '3d')
+
+        sc = ax.scatter(x_list, y_list, calculated_phase_list, c = calculated_phase_list, cmap = 'viridis', marker = 'o')
+
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Phase')
+        # ax.set_zlim(0.0, 2 * PI)
+
+        ax.set_title('Wavefront')
+
+        plt.tight_layout()
+
+

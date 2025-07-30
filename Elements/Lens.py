@@ -49,7 +49,6 @@ class SphericalSurface(OpticalElement):
         rp = np.tan(theta_i - theta_t) / np.tan(theta_i + theta_t)
 
         return rs, rp
-
     
     def interact(self, beamlet):
         normal = beamlet.position - self.position
@@ -128,7 +127,7 @@ class SphericalSurface(OpticalElement):
 
             beamlet.polarization = np.array(E_s * s_hat_out + E_p * p_hat_out)
             beamlet.k_mag /= n
-            # print(f"[{self.name}] n = {n}")
+            # print(f"[{self.name}] :\tn = {n}")
 
             beamlet.propagate(EPSILON)
         
@@ -192,7 +191,7 @@ class PlaneSurface(OpticalElement):
             rs, rp = self.fresnels_coefficients_reflection(n, cos_theta_i)
 
             # print(f"[{self.name}] :\tBeamlet direction before reflection = {beamlet.direction}")
-            beamlet.direction = beamlet.direction - 2 * normal * cos_theta_i
+            beamlet.direction = beamlet.direction - 2 * normal * np.dot(beamlet.direction, normal)
             # print(f"[{self.name}] :\tBeamlet direction after reflection = {beamlet.direction}")
 
             k_out = beamlet.direction
@@ -237,7 +236,7 @@ class PlaneSurface(OpticalElement):
 
             beamlet.polarization = np.array(E_s * s_hat_out + E_p * p_hat_out)
             beamlet.k_mag /= n
-            # print(f"[{self.name}] n = {n}")
+            # print(f"[{self.name}] :\tn = {n}")
 
             beamlet.propagate(EPSILON)    
 
@@ -261,7 +260,7 @@ class BiConvexLens(OpticalElement):
         yield self.Surface2
 
 class PlanoConvexLens(OpticalElement):
-    def __init__(self, position, orientation, name, refractive_index, f_value, aperture):
+    def __init__(self, position, orientation, name, refractive_index, f_value, aperture, flipped = False):
         super().__init__(position, orientation, name)
         self.n = refractive_index
         self.f = f_value
@@ -272,8 +271,12 @@ class PlanoConvexLens(OpticalElement):
 
         print(f"[{self.name}] :\tr = {r}, t = {t}")
 
-        self.Surface1 = SphericalSurface(center = self.position + (r - t) * self.orientation, orientation = self.orientation, name = "Front Surface " + self.name, radius = r, aperture = self.aperture, n_in = self.n, n_out = 1.0)
-        self.Surface2 = PlaneSurface(position = self.position + 0.002 * self.orientation, orientation = self.orientation, name = "Back Planar Surface " + self.name, aperture = self.aperture, n_in = self.n, n_out = 1.0)
+        if not flipped :
+            self.Surface1 = SphericalSurface(center = self.position + (r - t) * self.orientation, orientation = self.orientation, name = "Front Curved Surface " + self.name, radius = r, aperture = self.aperture, n_in = self.n, n_out = 1.0)
+            self.Surface2 = PlaneSurface(position = self.position + 0.002 * self.orientation, orientation = self.orientation, name = "Back Planar Surface " + self.name, aperture = self.aperture, n_in = self.n, n_out = 1.0)
+        else :
+            self.Surface1 = PlaneSurface(position = self.position - 0.002 * self.orientation, orientation = self.orientation, name = "Front Planar Surface " + self.name, aperture = self.aperture, n_in = 1.0, n_out = self.n)
+            self.Surface2 = SphericalSurface(center = self.position - (r - t) * self.orientation, orientation = self.orientation, name = "Back Curved Surface " + self.name, radius = -r, aperture = self.aperture, n_in = self.n, n_out = 1.0)
 
     def __iter__(self):
         yield self.Surface1

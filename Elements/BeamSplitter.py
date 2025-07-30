@@ -57,7 +57,6 @@ class BeamSplitter(OpticalElement):
             E_s = np.dot(E_in, s_hat)
             
             beamlet.direction = beamlet.direction - 2 * self.orientation * (beamlet.direction @ self.orientation)
-            beamlet.beam_axis = beamlet.beam_axis - 2 * self.orientation * (beamlet.beam_axis @ self.orientation)
 
             k_out = beamlet.direction
 

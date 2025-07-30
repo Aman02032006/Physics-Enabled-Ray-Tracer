@@ -1,2 +1,3 @@
-from .beamlet import Beamlet
-from .gaussian_source import GaussianSource
+from .Beamlet import Beamlet
+from .GaussianBeam import GaussianBeam
+from .PlaneWave import PlaneWave
