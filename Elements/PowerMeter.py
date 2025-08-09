@@ -13,7 +13,12 @@ class PowerMeter(OpticalElement) :
         self.collected_power = 0
 
         self.set_up_localframe()
+
+        self.model_path = 'Models/Power Meter.ipt'
     
+    def __iter__(self):
+        yield self
+
     def set_up_localframe(self) :
         w = self.orientation
 
@@ -126,7 +131,7 @@ class PowerMeter(OpticalElement) :
         # Total intensity
         print(f"[{self.name}] :\t[2/4] Computing power grid...")
         Power_Grid = (np.abs(Ex_grid)**2 + np.abs(Ey_grid)**2 + np.abs(Ez_grid)**2) * self.pixel_size**2
-        # Power_Grid /= np.max(Power_Grid)
+        Power_Grid /= np.max(Power_Grid)
 
         self.power()
 

@@ -100,9 +100,9 @@ class SphericalSurface(OpticalElement):
             k_in = beamlet.direction
 
             s_hat = np.cross(normal, k_in)
-            s_hat /= np.linalg.norm(s_hat)
+            s_hat /= np.linalg.norm(s_hat) if np.linalg.norm(s_hat) > 1e-6 else 1e-6
             p_hat = np.cross(s_hat, k_in)
-            p_hat /= np.linalg.norm(p_hat)
+            p_hat /= np.linalg.norm(p_hat) if np.linalg.norm(p_hat) > 1e-6 else 1e-6
 
             E_in = beamlet.polarization
             E_p = np.dot(E_in, p_hat)
@@ -121,9 +121,9 @@ class SphericalSurface(OpticalElement):
             k_out = beamlet.direction
 
             s_hat_out = np.cross(normal, k_out)
-            s_hat_out /= np.linalg.norm(s_hat_out)
+            s_hat_out /= np.linalg.norm(s_hat_out) if np.linalg.norm(s_hat_out) > 1e-6 else 1e-6
             p_hat_out = np.cross(s_hat_out, k_out)
-            p_hat_out /= np.linalg.norm(p_hat_out)
+            p_hat_out /= np.linalg.norm(p_hat_out) if np.linalg.norm(p_hat_out) > 1e-6 else 1e-6
 
             beamlet.polarization = np.array(E_s * s_hat_out + E_p * p_hat_out)
             beamlet.k_mag /= n
@@ -209,18 +209,15 @@ class PlaneSurface(OpticalElement):
             k_in = beamlet.direction
 
             s_hat = np.cross(normal, k_in)
-            s_hat /= np.linalg.norm(s_hat)
+            s_hat /= np.linalg.norm(s_hat) if np.linalg.norm(s_hat) > 1e-6 else 1e-6
             p_hat = np.cross(s_hat, k_in)
-            p_hat /= np.linalg.norm(p_hat)
+            p_hat /= np.linalg.norm(p_hat) if np.linalg.norm(p_hat) > 1e-6 else 1e-6
 
             E_in = beamlet.polarization
             E_p = np.dot(E_in, p_hat)
             E_s = np.dot(E_in, s_hat)
 
             cos_theta_t = np.sqrt(1 - (1 - cos_theta_i**2) * n**2)
-
-            ts = 2 * ni * cos_theta_i / (ni * cos_theta_i + nt * cos_theta_t)
-            tp = 2 * ni * cos_theta_i / (nt * cos_theta_i + ni * cos_theta_t)
 
             # print(f"[{self.name}] :\tBeamlet direction before transmission = {beamlet.direction}")
             beamlet.direction = n * beamlet.direction + (n * cos_theta_i - cos_theta_t) * normal
@@ -230,9 +227,9 @@ class PlaneSurface(OpticalElement):
             k_out = beamlet.direction
 
             s_hat_out = np.cross(normal, k_out)
-            s_hat_out /= np.linalg.norm(s_hat_out)
+            s_hat_out /= np.linalg.norm(s_hat_out) if np.linalg.norm(s_hat_out) > 1e-6 else 1e-6
             p_hat_out = np.cross(s_hat_out, k_out)
-            p_hat_out /= np.linalg.norm(p_hat_out)
+            p_hat_out /= np.linalg.norm(p_hat_out) if np.linalg.norm(p_hat_out) > 1e-6 else 1e-6
 
             beamlet.polarization = np.array(E_s * s_hat_out + E_p * p_hat_out)
             beamlet.k_mag /= n
@@ -249,6 +246,8 @@ class BiConvexLens(OpticalElement):
 
         r = 2 * self.f * (self.n - 1)
         t = r - np.sqrt(r**2 - 0.25 * self.aperture**2)
+
+        self.model_path = 'Models/Bi Convex Lens.ipt'
 
         print(f"[{self.name}] :\tr = {r}, t = {t}")
 
@@ -268,6 +267,8 @@ class PlanoConvexLens(OpticalElement):
 
         r = self.f * (self.n - 1)
         t = r - np.sqrt(r**2 - 0.25 * self.aperture**2)
+
+        self.model_path = 'Models/Plano Convex Lens.ipt'
 
         print(f"[{self.name}] :\tr = {r}, t = {t}")
 

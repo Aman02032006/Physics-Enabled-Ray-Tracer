@@ -13,7 +13,12 @@ class PhaseMeter(OpticalElement):
         self.collected_beamlets = []
 
         self.set_up_localframe()
+
+        self.model_path = 'Models/Phase Meter.ipt'
     
+    def __iter__(self):
+        yield self
+
     def set_up_localframe(self) :
         w = self.orientation
 

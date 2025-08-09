@@ -6,6 +6,8 @@ from .Beamlet import Beamlet
 class PlaneWave(Source):
     def __init__(self, power, radius, wavelength, num_rays, position, direction, polarization):
         super().__init__(power, radius, wavelength, num_rays, position, direction, polarization)
+
+        self.model_path = "Models\\Phase Meter.ipt"
     
     def generate_rays(self):
         print("[Plane Wave] :\tGenerating Rays...")

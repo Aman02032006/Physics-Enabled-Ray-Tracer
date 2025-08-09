@@ -11,7 +11,12 @@ class HalfWavePlate(OpticalElement):
         self.transmittivity = transmittivity
 
         self.set_up_localframe()
+
+        self.model_path = 'Models/Half Wave Plate.ipt'
     
+    def __iter__(self):
+        yield self
+
     def hit(self, beamlet):
         if (np.abs(np.dot(beamlet.direction, self.orientation)) < 1e-6) : return False
 

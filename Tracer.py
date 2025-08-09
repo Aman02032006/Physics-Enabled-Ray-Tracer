@@ -26,5 +26,7 @@ class Tracer:
                 closest_element.interact(beamlet)
                 interacted_elements.append(closest_element)
             else :
-                return
+                return interacted_elements
+        
+        return interacted_elements
             

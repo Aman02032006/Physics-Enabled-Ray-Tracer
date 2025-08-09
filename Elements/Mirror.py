@@ -10,7 +10,12 @@ class Mirror(OpticalElement) :
         self.refractive_index = refractive_index
 
         self.set_up_localframe()
+
+        self.model_path = 'Models/Mirror.ipt'
     
+    def __iter__(self):
+        yield self
+
     def set_up_localframe(self) :
         w = self.orientation
 

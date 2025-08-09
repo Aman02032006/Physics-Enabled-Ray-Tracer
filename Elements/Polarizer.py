@@ -9,7 +9,12 @@ class Polarizer(OpticalElement):
         self.theta = transmission_angle
 
         self.set_up_localframe()
+
+        self.model_path = 'Models/Polarizer.ipt'
     
+    def __iter__(self):
+        yield self
+
     def set_up_localframe(self) :
         w = self.orientation
 
