@@ -12,7 +12,7 @@ source = PlaneWave(
     power = 1.0, 
     radius = 1e-3, 
     wavelength = 633e-9, 
-    num_rays = 50000,
+    num_rays = 100000,
     position = [0.0, 0.0, 0.0], 
     direction = [0.0, 0.0, 1.0], 
     polarization = [1.0, 0.0, 0.0])
@@ -21,16 +21,27 @@ source = PlaneWave(
 
 beamsplitter1 = BeamSplitter(position = [0.0, 0.0, 0.1], orientation = [1.0, 0.0, -1.0], size = 0.01, name = "Beam Splitter 1", refractive_index = 1.5)
 qwp1 = QuarterWavePlate(position = [0.0, 0.0, 0.135], orientation = [0.0, 0.0, 1.0], fast_axis_angle = PI/4, diameter = 0.01, name = "QWP1")
-hwp1 = HalfWavePlate(position=[0.0, 0.0, 0.15], orientation=[0.0, 0.0, 1.0], fast_axis_angle = 0, diameter=0.01, name="HWP1")
+hwp1 = HalfWavePlate(position=[0.0, 0.0, 0.15], orientation=[0.0, 0.0, 1.0], fast_axis_angle = PI/4, diameter=0.01, name="HWP1")
 qwp2 = QuarterWavePlate(position=[0.0, 0.0, 0.165], orientation=[0.0, 0.0, 1.0], fast_axis_angle=PI/4,diameter=0.01, name="QWP2")
 mirror1 = Mirror(position=[0.0, 0.0, 0.2], orientation = [1.0, 0.0, -1.0], diameter = 0.01, name = "Mirror 1", refractive_index = 1.5)
 mirror2 = Mirror(position=[0.1, 0.0, 0.1], orientation = [-1.0, 0.0, 1.0], diameter = 0.01, name = "Mirror 2", refractive_index = 1.5)
-mirror3 = Mirror(position=[0.15, 0.0, 0.2], orientation = [-1.0, 0.0, 1.0], diameter = 0.01, name = "Mirror 2", refractive_index = 1.5)
+mirror3 = Mirror(position=[0.15, 0.0, 0.2], orientation = [-1.0, 0.0, 1.0], diameter = 0.01, name = "Mirror 3", refractive_index = 1.5)
 beamsplitter2 = BeamSplitter(position = [0.1, 0.0, 0.2], orientation = [-1.0, 0.0, 1.0], size = 0.01, name = "Beam Splitter 2", refractive_index = 1.5)
 powermeter1 = PowerMeter(position=[0.1, 0.0, 0.25], orientation = [0.0, 0.0, -1.0], size=0.01, name = "Power Meter 1", pixel_size = 0.0001)
-powermeter2 = PowerMeter(position=[0.15, 0.0, 0.25], orientation = [0.0, 0.0, -1.0], size=0.01, name = "Power Meter 2", pixel_size = 0.0001)
+powermeter2 = PowerMeter(position=[0.15, 0.0, 0.2], orientation = [-1.0, 0.0, 0.0], size=0.01, name = "Power Meter 2", pixel_size = 0.0001)
 
-CreateSetupAssembly(Elements = [beamsplitter1, qwp1, qwp2, hwp1, mirror1, mirror2, mirror3, beamsplitter2, powermeter1, powermeter2], source = source)
+# CreateSetupAssembly(Elements = [beamsplitter1, qwp1, qwp2, hwp1, mirror1, mirror2, mirror3, beamsplitter2, powermeter1, powermeter2], source = source)
+element_list = [qwp2, beamsplitter1, qwp1, hwp1, mirror1, mirror2, beamsplitter2, powermeter1, powermeter2]
+tracer = Tracer(elements = element_list)
+
+beam = source.generate_rays()
+
+for ray in tqdm(beam, desc = "[Simulation] :\tTracing Rays"):
+    tracer.trace(ray)
+
+powermeter1.plot()
+powermeter2.plot()
+plt.show()
 
 """
 # Lens check

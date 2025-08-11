@@ -220,7 +220,7 @@ def visualize_beam(inv_app, asm_def, tg, constants, source, path, temp_dir):
         inv_app, asm_def, tg, constants,
         start_point = source.position * 200,
         end_point = path[0].position * 200,
-        radius = 0.15,
+        radius = 0.5,
         part_name = "BeamSegment",
         appearance_name = "Smooth - Red",
         temp_dir = temp_dir
@@ -232,7 +232,7 @@ def visualize_beam(inv_app, asm_def, tg, constants, source, path, temp_dir):
             inv_app, asm_def, tg, constants,
             start_point=path[i - 1].position * 200,
             end_point=path[i].position * 200,
-            radius = 0.15,
+            radius = 0.5,
             part_name="BeamSegment",
             appearance_name="Smooth - Red",
             temp_dir=temp_dir
