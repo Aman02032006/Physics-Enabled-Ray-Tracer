@@ -6,7 +6,6 @@ class Beamlet :
         # defining the position and direction of the ray
         self.position = np.array(position)
         self.direction = np.array(direction) / np.linalg.norm(np.array(direction))
-        self.beam_position = self.position
 
         self.wavelength = wavelength
         self.k_mag = 2 * PI / wavelength
@@ -14,7 +13,7 @@ class Beamlet :
         self.amplitude = amplitude
         self.propagation_phase = phase
         self.elemental_phase = 0
-        self.polarization = np.array(polarization)
+        self.polarization = normalize(polarization)
         
         self.active = True
         self.timestamp = 0.0
@@ -35,3 +34,4 @@ class Beamlet :
         
         # updating phase
         self.propagation_phase += self.k_mag * distance
+        self.propagation_phase %= (2 * PI)

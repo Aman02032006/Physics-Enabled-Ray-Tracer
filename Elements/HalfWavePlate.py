@@ -18,12 +18,12 @@ class HalfWavePlate(OpticalElement):
         yield self
 
     def hit(self, beamlet):
-        if (np.abs(np.dot(beamlet.direction, self.orientation)) < 1e-6) : return False
+        if (np.abs(dot(beamlet.direction, self.orientation)) < 1e-6) : return False
 
-        t = - np.dot((beamlet.position - self.position), self.orientation) / np.dot(beamlet.direction, self.orientation)
+        t = - dot(vec_sub(beamlet.position, self.position), self.orientation) / dot(beamlet.direction, self.orientation)
         if (t < 0) : return False
 
-        if (np.linalg.norm(beamlet.position + t * beamlet.direction - self.position) >= self.radius) : return False
+        if (norm(vec_sub(vec_add(beamlet.position, scale(beamlet.direction, t)), self.position)) >= self.radius) : return False
 
         return t
     
@@ -32,10 +32,8 @@ class HalfWavePlate(OpticalElement):
 
         tmp = np.array([1.0, 0.0, 0.0]) if abs(w[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
 
-        u = np.cross(w, tmp)
-        u /= np.linalg.norm(u)
-        
-        v = np.cross(w, u)
+        u = normalize(cross(w, tmp))
+        v = cross(w, u)
 
         # If w is too parallel to x-axis, swap u and v
         if abs(w[0]) > 0.9:
@@ -45,8 +43,8 @@ class HalfWavePlate(OpticalElement):
     
     def axes(self):
         u, v, _ = self.local_frame
-        fast_axis = np.cos(self.theta) * v + np.sin(self.theta) * u
-        slow_axis = np.cos(self.theta) * u - np.sin(self.theta) * v
+        fast_axis = vec_add(scale(v, np.cos(self.theta)), scale(u, np.sin(self.theta)))
+        slow_axis = vec_sub(scale(u, np.cos(self.theta)), scale(v, np.sin(self.theta)))
 
         return fast_axis, slow_axis
 
@@ -56,8 +54,8 @@ class HalfWavePlate(OpticalElement):
             f, s = self.axes()
 
             E_in = beamlet.polarization
-            Ef = np.dot(E_in, f)
-            Es = np.dot(E_in, s)
+            Ef = dot(E_in, f)
+            Es = dot(E_in, s)
 
             # print(f"[{self.name}] :\tInput Polarization = {beamlet.polarization}")
             beamlet.polarization = np.array(Ef * f + np.exp(I * self.retardance) * Es * s)

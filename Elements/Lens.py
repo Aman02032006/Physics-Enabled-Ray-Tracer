@@ -12,29 +12,29 @@ class SphericalSurface(OpticalElement):
         self.n_out = n_out
     
     def hit(self, beamlet):
-        # print(f"[{self.name}] :\tHit checked")
-        a = np.dot(beamlet.direction, beamlet.direction)
-        b = 2 * np.dot(beamlet.position - self.position, beamlet.direction)
-        c = np.dot(beamlet.position - self.position, beamlet.position - self.position) - self.radius**2
+        a = dot(beamlet.direction, beamlet.direction)
+        b = 2 * dot(vec_sub(beamlet.position, self.position), beamlet.direction)
+        c = dot(vec_sub(beamlet.position, self.position), vec_sub(beamlet.position, self.position)) - self.radius**2
 
         D = b**2 - 4 * a * c
-
-        if D <= 0.0 : return False
+        if D <= 0.0:
+            return False
 
         D = np.sqrt(D)
 
-        if self.radius < 0 :
+        if self.radius < 0:
             t = (-b + D) / (2 * a)
-        else :
+        else:
             t = (-b - D) / (2 * a)
 
-        if t < 0 : return False
+        if t < 0:
+            return False
 
-        intersection_point = beamlet.position + t * beamlet.direction
+        intersection_point = vec_add(beamlet.position, scale(beamlet.direction, t))
+        r = norm(cross(vec_sub(intersection_point, self.position), self.orientation))
 
-        r = np.linalg.norm(np.cross(intersection_point - self.position, self.orientation))
-
-        if r > self.aperture / 2 : return False
+        if r > self.aperture / 2:
+            return False
 
         return t
     
@@ -51,83 +51,62 @@ class SphericalSurface(OpticalElement):
         return rs, rp
     
     def interact(self, beamlet):
-        normal = beamlet.position - self.position
-        normal /= np.linalg.norm(normal)
+        normal = normalize(vec_sub(beamlet.position, self.position))
 
-        if np.dot(normal, beamlet.direction) < 0.0 :
+        if dot(normal, beamlet.direction) < 0.0:
             ni, nt = self.n_out, self.n_in
-        else :
+        else:
             ni, nt = self.n_in, self.n_out
-            normal = -normal
+            normal = scale(normal, -1)
 
-        # print(f"[{self.name}] :\tni = {ni}, nt = {nt}")
-        
-        cos_theta_i = -np.dot(normal, beamlet.direction)
-
+        cos_theta_i = -dot(normal, beamlet.direction)
         n = ni / nt
 
         if n * np.sqrt(1 - cos_theta_i**2) > 1:
-            # print(f"[{self.name}] :\tBeamlet Reflected")
+            # Reflection
             k_in = beamlet.direction
-
-            s_hat = np.cross(normal, k_in)
-            s_hat /= np.linalg.norm(s_hat)
-            p_hat = np.cross(s_hat, k_in)
-            p_hat /= np.linalg.norm(p_hat)
+            s_hat = normalize(cross(normal, k_in))
+            p_hat = normalize(cross(s_hat, k_in))
 
             E_in = beamlet.polarization
-            E_p = np.dot(E_in, p_hat)
-            E_s = np.dot(E_in, s_hat)
+            E_p = dot(E_in, p_hat)
+            E_s = dot(E_in, s_hat)
 
             rs, rp = self.fresnels_coefficients_reflection(n, cos_theta_i)
 
-            # print(f"[{self.name}] :\tBeamlet direction before reflection = {beamlet.direction}")
-            beamlet.direction = beamlet.direction - 2 * normal * (beamlet.direction @ normal)
-            # print(f"[{self.name}] :\tBeamlet direction after reflection = {beamlet.direction}")
+            beamlet.direction = vec_sub(
+                beamlet.direction,
+                scale(normal, 2 * dot(beamlet.direction, normal))
+            )
 
             k_out = beamlet.direction
+            s_hat_out = normalize(cross(normal, k_out))
+            p_hat_out = normalize(cross(s_hat_out, k_out))
 
-            s_hat_out = np.cross(normal, k_out)
-            s_hat_out /= np.linalg.norm(s_hat_out)
-            p_hat_out = np.cross(s_hat_out, k_out)
-            p_hat_out /= np.linalg.norm(p_hat_out)
-
-            beamlet.polarization = np.array(rs * E_s * s_hat_out + rp * E_p * p_hat_out)
+            beamlet.polarization = vec_add(scale(s_hat_out, rs * E_s), scale(p_hat_out, rp * E_p))
 
             beamlet.propagate(EPSILON)
-        else:
-            # print(f"[{self.name}] :\tBeamlet Transmitted")
-            k_in = beamlet.direction
 
-            s_hat = np.cross(normal, k_in)
-            s_hat /= np.linalg.norm(s_hat) if np.linalg.norm(s_hat) > 1e-6 else 1e-6
-            p_hat = np.cross(s_hat, k_in)
-            p_hat /= np.linalg.norm(p_hat) if np.linalg.norm(p_hat) > 1e-6 else 1e-6
+        else:
+            # Transmission
+            k_in = beamlet.direction
+            s_hat = normalize(cross(normal, k_in))
+            p_hat = normalize(cross(s_hat, k_in))
 
             E_in = beamlet.polarization
-            E_p = np.dot(E_in, p_hat)
-            E_s = np.dot(E_in, s_hat)
+            E_p = dot(E_in, p_hat)
+            E_s = dot(E_in, s_hat)
 
             cos_theta_t = np.sqrt(1 - (1 - cos_theta_i**2) * n**2)
 
-            ts = 2 * ni * cos_theta_i / (ni * cos_theta_i + nt * cos_theta_t)
-            tp = 2 * ni * cos_theta_i / (nt * cos_theta_i + ni * cos_theta_t)
-
-            # print(f"[{self.name}] :\tBeamlet direction before transmission = {beamlet.direction}")
-            beamlet.direction = n * beamlet.direction + (n * cos_theta_i - cos_theta_t) * normal
-            beamlet.direction /= np.linalg.norm(beamlet.direction)
-            # print(f"[{self.name}] :\tBeamlet direction after transmission = {beamlet.direction}")
+            beamlet.direction = normalize(vec_add(scale(beamlet.direction, n), scale(normal, n * cos_theta_i - cos_theta_t)))
 
             k_out = beamlet.direction
+            s_hat_out = normalize(cross(normal, k_out))
+            p_hat_out = normalize(cross(s_hat_out, k_out))
 
-            s_hat_out = np.cross(normal, k_out)
-            s_hat_out /= np.linalg.norm(s_hat_out) if np.linalg.norm(s_hat_out) > 1e-6 else 1e-6
-            p_hat_out = np.cross(s_hat_out, k_out)
-            p_hat_out /= np.linalg.norm(p_hat_out) if np.linalg.norm(p_hat_out) > 1e-6 else 1e-6
-
-            beamlet.polarization = np.array(E_s * s_hat_out + E_p * p_hat_out)
+            beamlet.polarization = vec_add(scale(s_hat_out, E_s), scale(p_hat_out, E_p))
             beamlet.k_mag /= n
-            # print(f"[{self.name}] :\tn = {n}")
 
             beamlet.propagate(EPSILON)
         
@@ -139,12 +118,16 @@ class PlaneSurface(OpticalElement):
         self.n_out = n_out
     
     def hit(self, beamlet):
-        if (np.abs(np.dot(beamlet.direction, self.orientation)) < 1e-6) : return False
+        if abs(dot(beamlet.direction, self.orientation)) < 1e-6:
+            return False
 
-        t = - np.dot((beamlet.position - self.position), self.orientation) / np.dot(beamlet.direction, self.orientation)
-        if (t < 0) : return False
+        t = -dot(vec_sub(beamlet.position, self.position), self.orientation) / dot(beamlet.direction, self.orientation)
+        if t < 0:
+            return False
 
-        if (np.linalg.norm(beamlet.position + t * beamlet.direction - self.position) >= self.aperture / 2) : return False
+        intersection_point = vec_add(beamlet.position, scale(beamlet.direction, t))
+        if norm(vec_sub(intersection_point, self.position)) >= self.aperture / 2:
+            return False
 
         return t
     
@@ -161,7 +144,7 @@ class PlaneSurface(OpticalElement):
         return rs, rp
 
     def interact(self, beamlet):
-        cos_theta_i = np.dot(beamlet.direction, self.orientation)
+        cos_theta_i = dot(beamlet.direction, self.orientation)
 
         if cos_theta_i > 0 :
             ni, nt = self.n_in, self.n_out
@@ -179,27 +162,23 @@ class PlaneSurface(OpticalElement):
             # print(f"[{self.name}] :\tBeamlet Reflected")
             k_in = beamlet.direction
 
-            s_hat = np.cross(normal, k_in)
-            s_hat /= np.linalg.norm(s_hat)
-            p_hat = np.cross(s_hat, k_in)
-            p_hat /= np.linalg.norm(p_hat)
+            s_hat = normalize(cross(normal, k_in))
+            p_hat = normalize(cross(s_hat, k_in))
 
             E_in = beamlet.polarization
-            E_p = np.dot(E_in, p_hat)
-            E_s = np.dot(E_in, s_hat)
+            E_p = dot(E_in, p_hat)
+            E_s = dot(E_in, s_hat)
 
             rs, rp = self.fresnels_coefficients_reflection(n, cos_theta_i)
 
             # print(f"[{self.name}] :\tBeamlet direction before reflection = {beamlet.direction}")
-            beamlet.direction = beamlet.direction - 2 * normal * np.dot(beamlet.direction, normal)
+            beamlet.direction = vec_sub(beamlet.direction, scale(normal, 2 *dot(beamlet.direction, normal)))
             # print(f"[{self.name}] :\tBeamlet direction after reflection = {beamlet.direction}")
 
             k_out = beamlet.direction
 
-            s_hat_out = np.cross(normal, k_out)
-            s_hat_out /= np.linalg.norm(s_hat_out)
-            p_hat_out = np.cross(s_hat_out, k_out)
-            p_hat_out /= np.linalg.norm(p_hat_out)
+            s_hat_out = normalize(cross(normal, k_out))
+            p_hat_out = normalize(cross(s_hat_out, k_out))
 
             beamlet.polarization = np.array(rs * E_s * s_hat_out + rp * E_p * p_hat_out)
 
@@ -208,34 +187,29 @@ class PlaneSurface(OpticalElement):
             # print(f"[{self.name}] :\tBeamlet Transmitted")
             k_in = beamlet.direction
 
-            s_hat = np.cross(normal, k_in)
-            s_hat /= np.linalg.norm(s_hat) if np.linalg.norm(s_hat) > 1e-6 else 1e-6
-            p_hat = np.cross(s_hat, k_in)
-            p_hat /= np.linalg.norm(p_hat) if np.linalg.norm(p_hat) > 1e-6 else 1e-6
+            s_hat = normalize(cross(normal, k_in))
+            p_hat = normalize(cross(s_hat, k_in))
 
             E_in = beamlet.polarization
-            E_p = np.dot(E_in, p_hat)
-            E_s = np.dot(E_in, s_hat)
+            E_p = dot(E_in, p_hat)
+            E_s = dot(E_in, s_hat)
 
             cos_theta_t = np.sqrt(1 - (1 - cos_theta_i**2) * n**2)
 
             # print(f"[{self.name}] :\tBeamlet direction before transmission = {beamlet.direction}")
-            beamlet.direction = n * beamlet.direction + (n * cos_theta_i - cos_theta_t) * normal
-            beamlet.direction /= np.linalg.norm(beamlet.direction)
+            beamlet.direction = normalize(vec_add(scale(beamlet.direction, n), scale(normal, (n * cos_theta_i - cos_theta_t))))
             # print(f"[{self.name}] :\tBeamlet direction after transmission = {beamlet.direction}")
 
             k_out = beamlet.direction
 
-            s_hat_out = np.cross(normal, k_out)
-            s_hat_out /= np.linalg.norm(s_hat_out) if np.linalg.norm(s_hat_out) > 1e-6 else 1e-6
-            p_hat_out = np.cross(s_hat_out, k_out)
-            p_hat_out /= np.linalg.norm(p_hat_out) if np.linalg.norm(p_hat_out) > 1e-6 else 1e-6
+            s_hat_out = normalize(cross(normal, k_out))
+            p_hat_out = normalize(cross(s_hat_out, k_out))
 
             beamlet.polarization = np.array(E_s * s_hat_out + E_p * p_hat_out)
             beamlet.k_mag /= n
             # print(f"[{self.name}] :\tn = {n}")
-
-            beamlet.propagate(EPSILON)    
+             
+            beamlet.propagate(EPSILON)  
 
 class BiConvexLens(OpticalElement):
     def __init__(self, position, orientation, name, refractive_index, f_value, aperture):

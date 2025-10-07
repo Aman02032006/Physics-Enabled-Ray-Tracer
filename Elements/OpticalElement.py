@@ -1,9 +1,10 @@
 import numpy as np
+from Utils import *
 
 class OpticalElement :
     def __init__(self, position, orientation, name):
         self.position = np.array(position)
-        self.orientation = np.array(orientation) / np.linalg.norm(np.array(orientation))
+        self.orientation = normalize(orientation)
         self.name = name
         self.next_elements = set()
 

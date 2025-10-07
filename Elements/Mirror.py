@@ -21,10 +21,8 @@ class Mirror(OpticalElement) :
 
         tmp = np.array([1.0, 0.0, 0.0]) if abs(w[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
 
-        u = np.cross(w, tmp)
-        u /= np.linalg.norm(u)
-        
-        v = np.cross(w, u)
+        u = normalize(cross(w, tmp))
+        v = normalize(cross(w, u))
 
         # If w is too parallel to x-axis, swap u and v
         if abs(w[0]) > 0.9:
@@ -33,12 +31,12 @@ class Mirror(OpticalElement) :
         self.local_frame = (u, v, w)
     
     def hit(self, beamlet):
-        if (np.abs(np.dot(beamlet.direction, self.orientation)) < 1e-6) : return False
+        if (np.abs(dot(beamlet.direction, self.orientation)) < 1e-6) : return False
 
-        t = - np.dot((beamlet.position - self.position), self.orientation) / np.dot(beamlet.direction, self.orientation)
+        t = - dot(vec_sub(beamlet.position, self.position), self.orientation) / dot(beamlet.direction, self.orientation)
         if (t < 0) : return False
 
-        if (np.linalg.norm(beamlet.position + t * beamlet.direction - self.position) >= self.radius) : return False
+        if (norm(vec_sub(vec_add(beamlet.position, scale(beamlet.direction, t)), self.position)) >= self.radius) : return False
 
         return t
     
@@ -61,27 +59,23 @@ class Mirror(OpticalElement) :
             n = self.orientation
             k_in = beamlet.direction
 
-            s_hat = np.cross(n, k_in)
-            s_hat /= np.linalg.norm(s_hat)
-            p_hat = np.cross(s_hat, k_in)
-            p_hat /= np.linalg.norm(p_hat)
+            s_hat = normalize(cross(n, k_in))
+            p_hat = normalize(cross(s_hat, k_in))
 
             E_in = beamlet.polarization
-            E_p = np.dot(E_in, p_hat)
-            E_s = np.dot(E_in, s_hat)
+            E_p = dot(E_in, p_hat)
+            E_s = dot(E_in, s_hat)
 
             cos_theta_i = - k_in @ n
 
             rs, rp = self.fresnels_coefficients_reflection(self.refractive_index, cos_theta_i)
 
-            beamlet.direction = beamlet.direction - 2 * self.orientation * (beamlet.direction @ self.orientation)
+            beamlet.direction = vec_sub(beamlet.direction, scale(self.orientation , 2 * dot(beamlet.direction, self.orientation)))
 
             k_out = beamlet.direction
 
-            s_hat_out = np.cross(n, k_out)
-            s_hat_out /= np.linalg.norm(s_hat_out)
-            p_hat_out = np.cross(s_hat_out, k_out)
-            p_hat_out /= np.linalg.norm(p_hat_out)
+            s_hat_out = normalize(cross(n, k_out))
+            p_hat_out = normalize(cross(s_hat_out, k_out))
 
             beamlet.polarization = np.array(rs * E_s * s_hat_out + rp * E_p * p_hat_out)
 

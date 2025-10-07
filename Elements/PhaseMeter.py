@@ -19,15 +19,16 @@ class PhaseMeter(OpticalElement):
     def __iter__(self):
         yield self
 
+    def clear(self):
+        self.collected_beamlets = []
+
     def set_up_localframe(self) :
         w = self.orientation
 
         tmp = np.array([1.0, 0.0, 0.0]) if abs(w[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
 
-        u = np.cross(w, tmp)
-        u /= np.linalg.norm(u)
-        
-        v = np.cross(w, u)
+        u = normalize(cross(w, tmp))
+        v = normalize(cross(w, u))
 
         # If w is too parallel to x-axis, swap u and v
         if abs(w[0]) > 0.9:
@@ -36,16 +37,16 @@ class PhaseMeter(OpticalElement):
         self.local_frame = (u, v, w)
     
     def hit(self, beamlet):
-        if (np.abs(np.dot(beamlet.direction, self.orientation)) < 1e-6) : return False
+        if (np.abs(dot(beamlet.direction, self.orientation)) < 1e-6) : return False
 
-        t = - np.dot((beamlet.position - self.position), self.orientation) / np.dot(beamlet.direction, self.orientation)
+        t = - dot(vec_sub(beamlet.position, self.position), self.orientation) / dot(beamlet.direction, self.orientation)
         if (t < 0) : return False
 
         u, v, _ = self.local_frame
 
         intersection_point = beamlet.position + t * beamlet.direction
-        x_point = np.dot((intersection_point - self.position), v)
-        y_point = np.dot((intersection_point - self.position), u)
+        x_point = dot(vec_sub(intersection_point, self.position), v)
+        y_point = dot(vec_sub(intersection_point, self.position), u)
 
         if abs(x_point) > self.size / 2 or abs(y_point) > self.size / 2 : return False
 
@@ -67,14 +68,14 @@ class PhaseMeter(OpticalElement):
         calculated_phase_list = []
 
         for beamlet in self.collected_beamlets:
-            dx = beamlet.position - self.position
-            x_rel = np.dot(dx, v)
-            y_rel = np.dot(dx, u)
+            dx = vec_sub(beamlet.position, self.position)
+            x_rel = dot(dx, v)
+            y_rel = dot(dx, u)
             
             x_list.append(x_rel)
             y_list.append(y_rel)
 
-            Ex = np.dot(beamlet.E, v)
+            Ex = dot(beamlet.E, v)
             phi = np.angle(Ex, deg = False)
             extracted_phase_list.append(phi if phi > 0 else phi + 2 * PI)  # Wrap phase between 0 and 2π
             calculated_phase_list.append(beamlet.propagation_phase % (2 * PI))
@@ -104,8 +105,8 @@ class PhaseMeter(OpticalElement):
 
         for beamlet in self.collected_beamlets:
             dx = beamlet.position - self.position
-            x_rel = np.dot(dx, v)
-            y_rel = np.dot(dx, u)
+            x_rel = dot(dx, v)
+            y_rel = dot(dx, u)
             
             x_list.append(x_rel)
             y_list.append(y_rel)

@@ -255,7 +255,7 @@ def CreateSetupAssembly(Elements, source = None):
         if source is not None:
             # Assuming source might also be an element to be placed
             # placeElement(asm_def, tg, source)
-
+            
             TraceElements = []
             for element in Elements:
                 element_subparts = [*element]
@@ -268,7 +268,7 @@ def CreateSetupAssembly(Elements, source = None):
             # Your original tracing logic
             for _ in range(100):
                 ray = Beamlet(position=source.position, direction=source.direction, amplitude=1, phase=0.0, polarization=[1.0, 0.0, 0.0], wavelength=633e-9)
-                Element_Path = tracer.trace(ray)
+                Element_Path = tracer.GetPath(ray)
                 # print(Element_Path)
                 if Element_Path not in Paths:
                     Paths.append(Element_Path)

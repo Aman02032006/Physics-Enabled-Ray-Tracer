@@ -7,7 +7,7 @@ class Tracer:
         self.ElementList = elements
         self.first_element = None
 
-        source = PlaneWave(
+        source = GaussianBeam(
             power = 1.0, 
             radius = 1e-3, 
             wavelength = 633e-9, 
@@ -23,12 +23,14 @@ class Tracer:
     
     def GetPath(self, beamlet):
         previous_element = None
+        elements_interacted = []
 
         while beamlet.active:
             min_dist = np.inf
             closest_element = None
 
             for element in self.ElementList :
+                if element in elements_interacted: continue
                 dist = element.hit(beamlet)
                 
                 if dist is not False and dist < min_dist :
@@ -47,8 +49,9 @@ class Tracer:
                     previous_element.next_elements.add(closest_element)
                 
                 previous_element = closest_element
+                elements_interacted.append(closest_element)
             else :
-                return
+                return elements_interacted
     
     def trace(self, beamlet):
         currentElement = None

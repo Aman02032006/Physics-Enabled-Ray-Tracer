@@ -1,0 +1,65 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.special import genlaguerre
+
+def laguerre_gaussian_field(x, y, z, l=2, p=2, w0=1e-3, wavelength=633e-9):
+    k = 2 * np.pi / wavelength
+    zR = np.pi * w0**2 / wavelength  # Rayleigh range
+    
+    # Beam parameters
+    wz = w0 * np.sqrt(1 + (z/zR)**2)           # beam waist
+    Rz = np.inf if z == 0 else z * (1 + (zR/z)**2)  # radius of curvature
+    psi = (2*p + abs(l) + 1) * np.arctan(z/zR) # Gouy phase
+    
+    # Coordinates
+    r = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    
+    # Radial polynomial
+    L = genlaguerre(p, abs(l))(2 * r**2 / wz**2)
+    
+    # Field
+    field = (1/wz) * ((np.sqrt(2)*r/wz)**abs(l)) * L * np.exp(-r**2/wz**2) \
+            * np.exp(1j * l * phi) \
+            * np.exp(-1j * k * r**2 / (2*Rz)) \
+            * np.exp(-1j * psi)
+    
+    return field
+
+# Grid for visualization
+N = 500
+size = 1  # aperture size
+x = np.linspace(-size, size, N)
+y = np.linspace(-size, size, N)
+X, Y = np.meshgrid(x, y)
+
+# Parameters
+l, p = 2, 2
+w0 = 1e-3
+wavelength = 633e-9
+z = 10000  # 5 cm propagation distance (change this)
+
+# Compute field
+U = laguerre_gaussian_field(X, Y, z, l, p, w0, wavelength)
+
+# Intensity and phase
+I = np.abs(U)**2
+phase = np.angle(U) + np.pi
+
+# Plot
+fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+
+im0 = axs[0].imshow(I, extent=[-size, size, -size, size], cmap='inferno')
+axs[0].set_title(f'Intensity | LG({l},{p}) | z={z:.3f} m')
+axs[0].set_xlabel('x (m)')
+axs[0].set_ylabel('y (m)')
+fig.colorbar(im0, ax=axs[0], label="Intensity (a.u.)")
+
+im1 = axs[1].imshow(phase, extent=[-size, size, -size, size], cmap='viridis', vmin=0, vmax=2*np.pi)
+axs[1].set_title(f'Phase | LG({l},{p}) | z={z:.3f} m')
+axs[1].set_xlabel('x (m)')
+axs[1].set_ylabel('y (m)')
+fig.colorbar(im1, ax=axs[1], label="Phase (rad)")
+
+plt.tight_layout()
+plt.show()
